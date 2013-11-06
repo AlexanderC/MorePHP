@@ -14,6 +14,29 @@ use PHP\Constants\Ini;
 class TypeHinting
 {
     /**
+     * Main native and extended types
+     */
+    const T_SCALAR = 'scalar';
+    const T_OBJECT = 'object';
+    const T_RESOURCE = 'resource';
+    const T_FLOAT = 'float';
+    const T_INTEGER = 'integer';
+    const T_STRING = 'string';
+    const T_ARRAY = 'array';
+    const T_CALLABLE = 'callable';
+    const T_ANY = '';
+
+    /**
+     * Advanced native and extended types notation
+     */
+    const T_STRING_SHORT = 'str';
+    const T_INTEGER_SHORT = 'int';
+    const T_INTEGER_CTYPE_LONG = 'long';
+    const T_FLOAT_CTYPE_DOUBLE = 'double';
+    const T_RESOURCE_SHORT = 'res';
+    const T_OBJECT_SHORT = 'obj';
+
+    /**
      * @param \ReflectionMethod $reflectionMethod
      * @param array $args
      * @return bool
@@ -70,11 +93,11 @@ class TypeHinting
     public static function hintValueNative($type, $value)
     {
         switch($type) {
-            case "array":
+            case self::T_ARRAY:
                 return is_array($value);
-            case "callable":
+            case self::T_CALLABLE:
                 return is_callable($value);
-            case "":
+            case self::T_ANY:
                 return true;
                 break;
             default: return $value instanceof $type;
@@ -89,22 +112,24 @@ class TypeHinting
     public static function hintValueExtended($type, $value)
     {
         switch($type) {
-            case "string":
-            case "str":
+            case self::T_STRING:
+            case self::T_STRING_SHORT:
                 return is_string($value);
-            case "integer":
-            case "int":
-            case "long":
+            case self::T_INTEGER:
+            case self::T_INTEGER_SHORT:
+            case self::T_INTEGER_CTYPE_LONG:
                 return is_integer($value);
-            case "float":
-            case "double":
+            case self::T_FLOAT:
+            case self::T_FLOAT_CTYPE_DOUBLE:
                 return is_float($value);
-            case "resource":
-            case "res":
+            case self::T_RESOURCE:
+            case self::T_RESOURCE_SHORT:
                 return is_resource($value);
-            case "object":
-            case "obj":
+            case self::T_OBJECT:
+            case self::T_OBJECT_SHORT:
                 return is_object($value);
+            case self::T_SCALAR:
+                return is_scalar($value);
             default: return $value instanceof $type;
         }
     }
@@ -115,15 +140,33 @@ class TypeHinting
      */
     public static function getNativeParameterTypeHint(\ReflectionParameter $refParam)
     {
-        $export = \ReflectionParameter::export(
-            array(
-                $refParam->getDeclaringClass()->name,
-                $refParam->getDeclaringFunction()->name
-            ),
-            $refParam->name,
-            true
+        /** @var MemoryStorage $memory */
+        $memory = Config::get()[Config::MEMORY];
+        $cacheKey = sprintf(
+            "__MorePHP__|TypeHinting/ReflectionParameter/%s->%s({%d} %s)",
+            $refParam->getDeclaringClass()->getName(),
+            $refParam->getDeclaringFunction()->getName(),
+            $refParam->getPosition(),
+            $refParam->getName()
         );
 
-        return preg_replace('/.*?([\w\\\]*)\s+\$' . preg_quote($refParam->name, '/') . '.*/u', '\\1', $export);
+        if($memory->has($cacheKey)) {
+            return $memory->get($cacheKey);
+        } else {
+            $export = \ReflectionParameter::export(
+                array(
+                    $refParam->getDeclaringClass()->getName(),
+                    $refParam->getDeclaringFunction()->getName()
+                ),
+                $refParam->getName(),
+                true
+            );
+
+            $result = preg_replace('/.*?([\w\\\]*)\s+\$' . preg_quote($refParam->name, '/') . '.*/u', '\\1', $export);
+
+            $memory->set($cacheKey, $result);
+        }
+
+        return $result;
     }
 } 

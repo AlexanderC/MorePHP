@@ -12,6 +12,7 @@ use PHP\Constants\Ini;
 class Config implements \ArrayAccess
 {
     const DEFAULT_VALUE = null;
+    const MEMORY = '_memory';
 
     /**
      * @var array
@@ -21,6 +22,7 @@ class Config implements \ArrayAccess
     public function __construct()
     {
         $this->initFromIni();
+        $this->initMemoryStorage();
     }
 
     /**
@@ -132,5 +134,13 @@ class Config implements \ArrayAccess
                 $this->offsetSet($value, $iniValue);
             }
         }
+    }
+
+    /**
+     * @return void
+     */
+    protected function initMemoryStorage()
+    {
+        $this->offsetSet(self::MEMORY, new MemoryStorage());
     }
 } 

@@ -8,6 +8,9 @@
 namespace PHP\Annotations;
 
 
+use PHP\Config;
+use PHP\MemoryStorage;
+
 class MethodParameters
 {
     const BLOCK_REGEXP = "~(?:\s*\*\s*(?P<line>@param\s+[\w\\\]+\s+[$\w]+)\s*\n)~umi";
@@ -30,7 +33,20 @@ class MethodParameters
     {
         $this->method = $method;
 
-        $this->parseDocBlock();
+        /** @var MemoryStorage $memory */
+        $memory = Config::get()[Config::MEMORY];
+        $cacheKey = sprintf(
+            "__MorePHP__|MethodParameters/ReflectionMethod/%s->%s",
+            $this->method->getDeclaringClass()->getName(),
+            $this->method->getName()
+        );
+
+        if($memory->has($cacheKey)) {
+            $this->parsedParameters = $memory->get($cacheKey);
+        } else {
+            $this->parseDocBlock();
+            $memory->set($cacheKey, $this->parsedParameters);
+        }
     }
 
     /**
