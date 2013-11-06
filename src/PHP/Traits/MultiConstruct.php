@@ -15,8 +15,7 @@ use PHP\TypeHinting;
  * @package PHP\Traits
  *
  * @example constructor syntax:
- *          __construct([0-9]+)
- *          __construct([0-9]+)_(\w+)
+ *          __construct([0-9]+)(_.+)?
  *
  *          The number means count of parameters to be provided to the method.
  *          The words are necessary to keep method names unique across the class.
