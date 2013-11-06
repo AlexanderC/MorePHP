@@ -24,6 +24,11 @@ use PHP\TypeHinting;
  */
 trait MultiConstruct
 {
+    /**
+     * @var array
+     */
+    protected static $__constructMethodsDump;
+
     public function __construct()
     {
         $args = func_get_args();
@@ -32,20 +37,25 @@ trait MultiConstruct
         // choose the fastest way
         $methods = get_class_methods($this);
 
-        $argsNumDump = [];
+        // get all methods just once
+        if(!isset(self::$__constructMethodsDump)) {
+            self::$__constructMethodsDump = [];
 
-        // find all available methods that passes our regexp
-        foreach($methods as $method) {
-            if(preg_match("#^__construct([0-9]+)(?:_.+)?$#u", $method, $matches)) {
-                $numArgs = (int) $matches[1];
+            // find all available methods that passes our regexp
+            foreach($methods as $method) {
+                if(preg_match("#^__construct([0-9]+)(?:_.+)?$#u", $method, $matches)) {
+                    $numArgs = (int) $matches[1];
 
-                if(!isset($argsNumDump[$numArgs])) {
-                    $argsNumDump[$numArgs] = [];
+                    if(!isset($argsNumDump[$numArgs])) {
+                        $argsNumDump[$numArgs] = [];
+                    }
+
+                    self::$__constructMethodsDump[$numArgs][] = $method;
                 }
-
-                $argsNumDump[$numArgs][] = $method;
             }
         }
+
+        $argsNumDump = self::$__constructMethodsDump;
 
         if(!isset($argsNumDump[$argsCount])) {
             throw new \OutOfBoundsException("Unable to find multi constructor with {$argsCount} args specified");
